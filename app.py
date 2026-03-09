@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Configuración de la página
-st.set_page_config(page_title="ML Desde Cero", layout="wide")
+st.set_page_config(page_title="Proyecto de IA", layout="wide")
 
 # 1. MENÚ LATERAL
 st.sidebar.title("Navegación")
@@ -16,9 +16,9 @@ opcion = st.sidebar.selectbox(
 
 # 2. LÓGICA DE NAVEGACIÓN
 if opcion == "Inicio":
-    st.title("Bienvenido al Proyecto de ML")
+    st.title(" Proyecto de Inteligencia Artificial")
     st.write("Selecciona un algoritmo en el menú de la izquierda para comenzar.")
-    st.info("Este proyecto implementa modelos matemáticos desde cero, sin librerías de caja negra.")
+    st.info("<-------------------------------------------------------------------")
 
 elif opcion == "Regresión Lineal":
     st.title("Regresión Lineal Simple")
@@ -55,7 +55,7 @@ elif opcion == "Regresión Lineal":
     # Mostrar los datos si ya existen
     if datos is not None:
         st.write("Vista previa de los datos cargados:")
-        st.dataframe(datos.head())
+        st.dataframe(datos)
         
         # Verificamos que tengamos suficientes datos
         if len(datos) > 1:
@@ -92,7 +92,6 @@ elif opcion == "Regresión Lineal":
         # Calculamos las predicciones para todos los puntos que tenemos
         Y_pred = m * X + b
         
-        # Calculamos el MSE (Error Cuadrático Medio)
         mse = np.mean((Y - Y_pred) ** 2)
         st.write(f"**Error Cuadrático Medio (MSE):** {mse:.4f}")
         
@@ -125,32 +124,52 @@ elif opcion == "K-Nearest Neighbors":
 
     # 1. Configuración de Datos
     st.subheader("1. Cargar Datos de Entrenamiento")
-    tipo_entrada = st.radio("Fuente de datos:", ["Dataset de Ejemplo", "Archivo CSV"])
+    
+    # IGUAL QUE REGRESIÓN: Manual o Archivo CSV
+    tipo_entrada = st.radio("¿Cómo quieres ingresar los datos?", ["Manual", "Archivo CSV"])
 
     df_knn = None
 
-    if tipo_entrada == "Dataset de Ejemplo":
-        # Creamos un set de datos simple de dos clases (0 y 1)
-        data_dict = {
-            'X1': [1.0, 1.5, 2.0, 1.2, 5.0, 5.5, 6.0, 5.2, 2.5, 6.5],
-            'X2': [1.0, 1.5, 1.0, 2.0, 5.0, 5.5, 4.5, 6.0, 2.0, 5.0],
-            'Clase': [0, 0, 0, 0, 1, 1, 1, 1, 0, 1] # 0 = Azul, 1 = Rojo
-        }
-        df_knn = pd.DataFrame(data_dict)
-        st.info("Se cargó un dataset de prueba automáticamente.")
+    if tipo_entrada == "Manual":
+        st.subheader("Ingreso Manual")
+        st.write("Ingresa los datos separados por comas. (Asegúrate de poner la misma cantidad de elementos en las tres cajas).")
+        
+        # Cajas de texto con los datos de ejemplo pre-llenados para no tener que escribir todo de cero
+        x1_input = st.text_input("Ingresa los valores de X1 (separados por coma):", "1.0, 1.5, 2.0, 1.2, 5.0, 5.5, 6.0, 5.2, 2.5, 6.5")
+        x2_input = st.text_input("Ingresa los valores de X2 (separados por coma):", "1.0, 1.5, 1.0, 2.0, 5.0, 5.5, 4.5, 6.0, 2.0, 5.0")
+        clase_input = st.text_input("Ingresa las Clases correspondientes (separadas por coma, ej. 0, 1, 0...):", "0, 0, 0, 0, 1, 1, 1, 1, 0, 1")
+        
+        if x1_input and x2_input and clase_input:
+            try:
+                # Convertimos los textos en listas limpiando los espacios
+                x1_lista = [float(i.strip()) for i in x1_input.split(',')]
+                x2_lista = [float(i.strip()) for i in x2_input.split(',')]
+                # La clase puede ser texto (A, B) o números (0, 1)
+                clase_lista = [int(i.strip()) if i.strip().isdigit() else i.strip() for i in clase_input.split(',')]
+                
+                # Verificamos que el usuario no se haya equivocado y olvidado un número
+                if len(x1_lista) == len(x2_lista) == len(clase_lista):
+                    df_knn = pd.DataFrame({'X1': x1_lista, 'X2': x2_lista, 'Clase': clase_lista})
+                else:
+                    st.error(f"Error: Las listas tienen diferente tamaño. X1 tiene {len(x1_lista)}, X2 tiene {len(x2_lista)} y Clases tiene {len(clase_lista)}.")
+            except ValueError:
+                st.error("Error: Asegúrate de ingresar solo números separados por comas en las cajas de X1 y X2.")
 
     elif tipo_entrada == "Archivo CSV":
-        archivo = st.file_uploader("Sube CSV con columnas: X1, X2, Clase", type=["csv"])
+        st.subheader("Carga de Archivo")
+        st.warning("El archivo CSV debe tener las columnas llamadas exactamente: X1, X2 y Clase")
+        archivo = st.file_uploader("Sube tu archivo CSV", type=["csv"])
         if archivo is not None:
             df_knn = pd.read_csv(archivo)
 
-    # Si hay datos, mostramos la interfaz del algoritmo
+    # Si hay datos (ya sea manuales o por CSV), mostramos la tabla editable
     if df_knn is not None:
-        st.write("Vista previa de los datos:")
-        st.dataframe(df_knn.head())
+        st.write("Vista previa de los datos (¡Puedes editar las celdas directamente!):")
+        df_knn = st.data_editor(df_knn)
 
         st.markdown("---")
         st.subheader("2. Configurar el Algoritmo")
+        # ... AQUÍ CONTINÚA TU CÓDIGO ORIGINAL (col1, col2, col3, etc.) ...
         
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -162,7 +181,6 @@ elif opcion == "K-Nearest Neighbors":
         with col3:
             nuevo_x2 = st.number_input("Coordenada X2 del nuevo punto:", value=3.5)
 
-        # --- LÓGICA MATEMÁTICA MANUAL (SIN LIBRERÍAS) ---
         if st.button("Clasificar Nuevo Punto"):
             # 1. Convertir datos a arreglos numpy
             puntos = df_knn[['X1', 'X2']].values
@@ -187,7 +205,7 @@ elif opcion == "K-Nearest Neighbors":
             # 4. Votación (Moda)
             # Contamos cuál clase aparece más veces
             clases_unicas, conteos = np.unique(clases_vecinos, return_counts=True)
-            clase_ganadora = clases_unicas[np.argmax(conteos)]
+            clase_ganadora = clases_unicas[np.argmax(conteos)] 
             
             st.success(f"El nuevo punto pertenece a la **Clase {clase_ganadora}**")
             st.write("Vecinos más cercanos encontrados (Índice, Distancia, Clase):")
@@ -217,115 +235,136 @@ elif opcion == "K-Nearest Neighbors":
 elif opcion == "Naive Bayes":
     st.title("Clasificador Naive Bayes (Probabilístico)")
 
-    # 1. Cargar Datos Categóricos
+    # 1. Cargar Datos
     st.subheader("1. Cargar Datos de Entrenamiento")
     
-    data_bayes = {
-        'Clima': ['Sol', 'Sol', 'Nublado', 'Lluvia', 'Lluvia', 'Lluvia', 'Nublado', 'Sol', 'Sol', 'Lluvia', 'Sol', 'Nublado', 'Nublado', 'Lluvia'],
-        'Temperatura': ['Calor', 'Calor', 'Calor', 'Templado', 'Frio', 'Frio', 'Frio', 'Templado', 'Frio', 'Templado', 'Templado', 'Templado', 'Calor', 'Templado'],
-        'Jugar': ['No', 'No', 'Si', 'Si', 'Si', 'No', 'Si', 'No', 'Si', 'Si', 'Si', 'Si', 'Si', 'No']
-    }
+    tipo_entrada = st.radio("Fuente de datos:", ["Dataset de Ejemplo", "Archivo CSV"])
     
-    df_bayes = pd.DataFrame(data_bayes)
-    st.write("Dataset de Entrenamiento (Jugar Tenis):")
-    st.dataframe(df_bayes)
+    df_bayes = None
 
-    st.markdown("---")
-    st.subheader("2. Tablas de Frecuencia y Probabilidad")
-
-    # --- LÓGICA MATEMÁTICA MANUAL ---
-    
-    # 1. Calcular Probabilidad Previa (Prior) P(Clase)
-    total_datos = len(df_bayes)
-    conteos_clase = df_bayes['Jugar'].value_counts()
-    prob_clase = conteos_clase / total_datos
-    
-    st.write("**Probabilidades Previas (Prior):**")
-    st.write(prob_clase)
-
-    # 2. Calcular Verosimilitud (Likelihood) P(Atributo | Clase)
-    probs_condicionales = {}
-    columnas_features = ['Clima', 'Temperatura']
-    
-    col1, col2 = st.columns(2)
-    
-    for columna in columnas_features:
-        tabla = pd.crosstab(df_bayes[columna], df_bayes['Jugar'])
-        tabla_prob = tabla.div(conteos_clase, axis=1)
-        probs_condicionales[columna] = tabla_prob
+    if tipo_entrada == "Dataset de Ejemplo":
+        # Usamos el dataset original de clima
+        data_bayes = {
+            'Clima': ['Sol', 'Sol', 'Nublado', 'Lluvia', 'Lluvia', 'Lluvia', 'Nublado', 'Sol', 'Sol', 'Lluvia', 'Sol', 'Nublado', 'Nublado', 'Lluvia'],
+            'Temperatura': ['Calor', 'Calor', 'Calor', 'Templado', 'Frio', 'Frio', 'Frio', 'Templado', 'Frio', 'Templado', 'Templado', 'Templado', 'Calor', 'Templado'],
+            'Jugar': ['No', 'No', 'Si', 'Si', 'Si', 'No', 'Si', 'No', 'Si', 'Si', 'Si', 'Si', 'Si', 'No']
+        }
+        df_bayes = pd.DataFrame(data_bayes)
+        st.info("Se cargó el dataset de 'Jugar Tenis' automáticamente.")
         
-        with col1 if columna == 'Clima' else col2:
-            st.write(f"**Probabilidad P({columna} | Jugar):**")
+    elif tipo_entrada == "Archivo CSV":
+        st.warning("Nota: Sube un archivo donde la ÚLTIMA columna sea la clase a predecir.")
+        archivo = st.file_uploader("Sube tu archivo CSV:", type=["csv"])
+        if archivo is not None:
+            df_bayes = pd.read_csv(archivo)
+
+    # --- LÓGICA DINÁMICA CON DISCRETIZACIÓN ---
+    # Fíjate cómo este "if" está alineado a la izquierda con los "if" de arriba
+    if df_bayes is not None:
+        st.write("Dataset de Entrenamiento Original (¡Puedes editar las celdas directamente!):")
+        df_bayes = st.data_editor(df_bayes)
+
+        # NUEVO: DISCRETIZACIÓN AUTOMÁTICA DE NÚMEROS
+        df_transformado = df_bayes.copy()
+        columnas_features = df_transformado.columns[:-1] # Todas menos la última
+        columna_objetivo = df_transformado.columns[-1]   # La última columna
+        columnas_numericas = []
+
+        for col in columnas_features:
+            # Si la columna es de tipo numérico (entero o decimal)
+            if df_transformado[col].dtype in ['int64', 'float64']:
+                columnas_numericas.append(col)
+                # Convertimos los números en 3 rangos: Bajo, Medio, Alto
+                df_transformado[col] = pd.cut(df_transformado[col], bins=3, labels=["Bajo", "Medio", "Alto"])
+
+        if len(columnas_numericas) > 0:
+            st.success(f"¡Magia de Datos! Se detectaron columnas numéricas ({', '.join(columnas_numericas)}). Fueron convertidas en categorías ('Bajo', 'Medio', 'Alto') para que el modelo probabilístico funcione correctamente.")
+            st.write("Dataset Transformado:")
+            st.dataframe(df_transformado.head())
+
+        st.markdown("---")
+        st.subheader("2. Tablas de Frecuencia y Probabilidad")
+
+        # 1. Probabilidad Previa P(Clase)
+        total_datos = len(df_transformado)
+        conteos_clase = df_transformado[columna_objetivo].value_counts()
+        prob_clase = conteos_clase / total_datos
+        
+        st.write(f"**Probabilidades Previas de '{columna_objetivo}':**")
+        st.write(prob_clase)
+
+        # 2. Calcular Verosimilitud dinámicamente con los datos transformados
+        probs_condicionales = {}
+        
+        for columna in columnas_features:
+            tabla = pd.crosstab(df_transformado[columna], df_transformado[columna_objetivo])
+            tabla_prob = tabla.div(conteos_clase, axis=1)
+            probs_condicionales[columna] = tabla_prob
+            
+            st.write(f"**Probabilidad P({columna} | {columna_objetivo}):**")
             st.dataframe(tabla_prob)
 
-    st.markdown("---")
-    st.subheader("3. Realizar Predicción")
-    
-    c_clima = st.selectbox("Selecciona el Clima:", df_bayes['Clima'].unique())
-    c_temp = st.selectbox("Selecciona la Temperatura:", df_bayes['Temperatura'].unique())
-    
-    # --- CORRECCIÓN: Definimos esto AQUÍ afuera para que ambos botones lo vean ---
-    clases_posibles = df_bayes['Jugar'].unique()
-    
-    if st.button("Calcular Probabilidad"):
-        resultados = {}
-        st.write("### Paso a paso del Teorema de Bayes:")
+        st.markdown("---")
+        st.subheader("3. Realizar Predicción")
         
-        for clase in clases_posibles:
-            p_final = prob_clase[clase]
-            st.write(f"**Analizando Clase '{clase}':**")
-            st.write(f"   * P({clase}) = {p_final:.4f}")
-            
-            try:
-                p_clima = probs_condicionales['Clima'].loc[c_clima, clase]
-            except:
-                p_clima = 0
-            
-            p_final *= p_clima
-            st.write(f"   * P(Clima={c_clima} | {clase}) = {p_clima:.4f}")
-            
-            try:
-                p_temp = probs_condicionales['Temperatura'].loc[c_temp, clase]
-            except:
-                p_temp = 0
-                
-            p_final *= p_temp
-            st.write(f"   * P(Temp={c_temp} | {clase}) = {p_temp:.4f}")
-            
-            resultados[clase] = p_final
-            st.write(f"   **-> Probabilidad Posterior (no normalizada): {p_final:.4f}**")
-            st.write("---")
-            
-        clase_ganadora = max(resultados, key=resultados.get)
-        st.success(f"Predicción Final: **{clase_ganadora}** se debería jugar.")
-
-    # --- CÁLCULO DE PRECISIÓN (ACCURACY) ---
-    st.markdown("---")
-    st.subheader("4. Validación del Modelo")
-    
-    if st.button("Calcular Precisión (Accuracy)"):
-        aciertos = 0
+        # Generar los cuadros de selección
+        valores_usuario = {}
+        for col in columnas_features:
+            # Ahora los cuadros de selección mostrarán "Bajo", "Medio", "Alto" para números
+            valores_usuario[col] = st.selectbox(f"Selecciona {col}:", df_transformado[col].unique())
         
-        # Probamos el modelo contra los mismos datos de entrenamiento
-        for i, row in df_bayes.iterrows():
-            clase_real = row['Jugar']
+        clases_posibles = df_transformado[columna_objetivo].unique()
+        
+        if st.button("Calcular Probabilidad"):
+            resultados = {}
+            st.write("### Paso a paso del Teorema de Bayes:")
             
-            # Predicción interna
-            probs = {}
             for clase in clases_posibles:
-                p = prob_clase[clase]
+                p_final = prob_clase[clase]
+                st.write(f"**Analizando Clase '{clase}':**")
+                st.write(f"   * P({clase}) = {p_final:.4f}")
+                
                 for col in columnas_features:
-                    val = row[col]
+                    val_seleccionado = valores_usuario[col]
                     try:
-                        p *= probs_condicionales[col].loc[val, clase]
-                    except:
-                        p = 0
-                probs[clase] = p
-            
-            prediccion = max(probs, key=probs.get)
-            if prediccion == clase_real:
-                aciertos += 1
+                        p_feature = probs_condicionales[col].loc[val_seleccionado, clase]
+                    except KeyError:
+                        p_feature = 0
+                    
+                    p_final *= p_feature
+                    st.write(f"   * P({col}={val_seleccionado} | {clase}) = {p_feature:.4f}")
+                
+                resultados[clase] = p_final
+                st.write(f"   **-> Probabilidad Posterior: {p_final:.4f}**")
+                st.write("---")
+                
+            clase_ganadora = max(resultados, key=resultados.get)
+            st.success(f"Predicción Final para '{columna_objetivo}': **{clase_ganadora}**")
+
+        # --- CÁLCULO DE PRECISIÓN ---
+        st.markdown("---")
+        st.subheader("4. Validación del Modelo")
         
-        accuracy = (aciertos / total_datos) * 100
-        st.info(f"El modelo clasificó correctamente {aciertos} de {total_datos} casos.")
-        st.metric(label="Precisión del Modelo (Accuracy)", value=f"{accuracy:.2f}%")
+        if st.button("Calcular Precisión (Accuracy)"):
+            aciertos = 0
+            for i, row in df_transformado.iterrows():
+                clase_real = row[columna_objetivo]
+                
+                probs = {}
+                for clase in clases_posibles:
+                    p = prob_clase[clase]
+                    for col in columnas_features:
+                        val = row[col]
+                        try:
+                            p *= probs_condicionales[col].loc[val, clase]
+                        except KeyError:
+                            p = 0
+                    probs[clase] = p
+                
+                prediccion = max(probs, key=probs.get)
+                if prediccion == clase_real:
+                    aciertos += 1
+            
+            accuracy = (aciertos / total_datos) * 100
+            st.info(f"El modelo clasificó correctamente {aciertos} de {total_datos} casos.")
+            st.metric(label="Precisión del Modelo (Accuracy)", value=f"{accuracy:.2f}%")
